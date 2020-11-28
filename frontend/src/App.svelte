@@ -10,7 +10,7 @@
 		char: Infinity,
 	};
 	let socket;
-	const editSpeed = 50;
+	const editSpeed = 0;
 
 	function sleep(time) {
 		return new Promise((res, rej) => {
@@ -22,18 +22,21 @@
 		socket = io("localhost:3000");
 		socket.on("connect", () => {
 			socket.emit("repo", "linux-kernel");
+			socket.emit("next_patch");
 		});
 		socket.on("patch", async (newTitle, patch) => {
+			console.log(patch);
+
 			title = newTitle;
 			lines = patch.reduce((arr, element) => {
-				if (element.old) arr.push(element.old);
+				if (element.old != null)
+					arr.push(element.old);
 				return arr;
 			}, []);
 
 			cursor.line = 0;
 			let linesToDelete = 0;
 			await sleep(1000);
-			lines = [...lines];
 			for (let i = 0; i < patch.length;) {
 				if (patch[i].new == null) {
 					linesToDelete++;
@@ -59,6 +62,7 @@
 						if (c == ' ')
 							continue;
 						await sleep(editSpeed);
+
 					}
 					cursor.line++;
 					i++;
@@ -67,6 +71,7 @@
 					cursor.line++;
 				}
 			}
+			socket.emit("next_patch");
 		});
 	});
 	let scroll;
