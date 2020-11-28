@@ -1,2 +1,4 @@
-    // console.log(s1);
-    // console.log(s2);
+                else {
+                    d = {old: delStack.pop(), new: null};
+                    dictList.push(d);
+                }

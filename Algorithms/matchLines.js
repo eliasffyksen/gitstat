@@ -42,45 +42,55 @@ function editDistance(s1, s2) {
 
 function lineSetter(deleted, added) {
     var dictList = [];
-    var used_index_deleted = [];
-    var used_index_added = [];
+    var delStack = [];
+    var addStack = [];
     for (var i = 0; i < deleted.length; i++) {
-        var best = 0;
-        var oldS = "";
-        var newS = "";
-        var usedI = null;
-        var usedJ = null;
-        for (var j = 0; j < added.length; j++) {
-            var x = similarity(deleted[i], added[j]);
-            if (x > best) {
-                best = x;
-                oldS = deleted[i];
-                newS = added[j];
-                usedI = i;
-                usedJ = j;
+        delStack.push(deleted[i])
+    }
+    for (var i = 0; i < added.length; i++) {
+        addStack.push(added[i])
+    }
+
+    while (delStack.length > 0 || addStack.length > 0) {
+        if (delStack.length == 0) {
+            for (var i = 0; i < addStack.length; i++) {
+                d = {old: null, new: addStack.pop()};
+                dictList.push(d);
             }
         }
-        if (best > 0.75) {
-            dict = {old: oldS, new: newS};
-            dictList.push(dict);
-            used_index_added.push(usedJ);
-            used_index_deleted.push(usedI);
+        else if (addStack.length == 0) {
+            for (var i = 0; i < delStack.length; i++) {
+                d = {old: delStack.pop(), new: null};
+                dictList.push(d);
+            }
+        }
+        else {
+            var found = false;
+            var count = 0;
+            for (var i = 0; i < delStack.length; i++) {
+                if (similarity(addStack[addStack.length - 1], delStack[delStack.length - (1+i)]) > 0.75) {
+                    for (var x = 0; x < count; x++) {
+                        d = {old: delStack.pop(), new: null};
+                        dictList.push(d);
+                    }
+                    d = {old: delStack.pop(), new: addStack.pop()};
+                    dictList.push(d);
+                    found = true;
+                    break;
+                }
+                count++;
+            }
+            if (!found) {
+                d = {old: null, new: addStack.pop()};
+                dictList.push(d);
+            }
+
+
+
         }
     }
 
-    for (var x = 0; x < deleted.length; x++) {
-        if (!used_index_deleted.includes(x)) {
-            var y = {old: deleted[x], new: null};
-            dictList.push(y);
-        }
-    }
-
-    for (var x = 0; x < added.length; x++) {
-        if (!used_index_added.includes(x)) {
-            var y = {old: null, new: added[x]};
-            dictList.push(y);
-        }
-    }
+    //console.log(delStack)
 
     return dictList;
 }
@@ -92,10 +102,61 @@ arr_deleted = [
     ]
 
 arr_added = [
-    "Double d_min = 3.3 * 1;",
+    "Double d_min = 3.3 * 1;",    
     "opponentsHit.add(currentTarget.getID());",
     "Double d_max = 3.3 * 5;",
     "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
 ]
 
 console.log(lineSetter(arr_deleted, arr_added))
+
+
+
+// OLD FUNC
+
+// function lineSetter(deleted, added) {
+//     var dictList = [];
+//     var used_index_deleted = [];
+//     var used_index_added = [];
+//     for (var i = 0; i < deleted.length; i++) {
+//         var best = 0;
+//         var oldS = "";
+//         var newS = "";
+//         var usedI = null;
+//         var usedJ = null;
+//         for (var j = 0; j < added.length; j++) {
+//             var x = similarity(deleted[i], added[j]);
+//             if (x > best) {
+//                 best = x;
+//                 oldS = deleted[i];
+//                 newS = added[j];
+//                 usedI = i;
+//                 usedJ = j;
+//             }
+//         }
+//         if (best > 0.75) {
+//             for (var k = 0; k < usedJ; k++) {
+//                 if (!used_index_added.includes(k)) {
+//                     dict = {old: null, new: added[k]};
+//                     dictList.push(dict);
+//                 }
+//             }
+//             dict = {old: oldS, new: newS};
+//             dictList.push(dict);
+//             used_index_added.push(usedJ);
+//             used_index_deleted.push(usedI);
+//         } else {
+//             dict = {old: oldS, new: null};
+//             dictList.push(dict);
+//         }
+//     }
+
+//     if (used_index_added.length > 0) {
+//         for (var k = used_index_added[used_index_added.length - 1]; k < added.length; k++) {
+//             dict = {old: null, new: added[k]};
+//             dictList.push(dict);
+//         }
+//     }
+
+//     return dictList;
+//}
