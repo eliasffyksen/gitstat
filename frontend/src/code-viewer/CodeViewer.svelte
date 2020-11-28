@@ -1,12 +1,11 @@
 <script>
     import { onMount, onDestroy } from "svelte";
 
-    export let filename = 'path/to/file.code repo/brach (username)';
+    export let title = 'path/to/file.code repo/brach (username)';
     export let lines = [];
-    let cursor = {
-        line: 1,
+    export let cursor = {
+        line: 0,
         char: 1 / 0,
-        element: null
     };
     let codeTable = null;
     let cursorWhite = true;
@@ -33,15 +32,7 @@
         if (addingLine) clearInterval(addingLine);
     });
 
-    function lineUp() {
-        cursor.line = Math.max(cursor.line - 1, 0);
-    }
-
-    function lineDown() {
-        cursor.line = Math.min(cursor.line + 1, lines.length);
-    }
-
-    function deleteLine() {
+    export function deleteLine() {
         if (deletingLine || addingLine) {
             console.error(
                 "You are allready deleting or adding a line, wait until it's done"
@@ -118,7 +109,7 @@
     <input on:blur={(e) => scroll()} type="number" bind:value={cursor.line}>
 </div>
 <div class="flex flex-col flex-shrink overflow-hidden">
-    <h1 class="text-xl text-center bg-gray-900 text-white border-4 border-gray-700">{filename}</h1>
+    <h1 class="text-xl text-center bg-gray-900 text-white border-4 border-gray-700">{title}</h1>
     <div bind:this={editor} class="overflow-hidden">
         <table bind:this={codeTable} class="relative" style="transition: top {scrollSpeed}; top: -{offset}px;">
             {#each lines as line, lineNum}
