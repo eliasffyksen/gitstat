@@ -1,0 +1,11 @@
+version: '3'
+services:
+  rdb:
+    image: rethinkdb
+    volumes:
+      - rdb-data:/data
+    ports:
+      - 8080:8080
+      - 2805:2805
+volumes:
+  rdb-data:
