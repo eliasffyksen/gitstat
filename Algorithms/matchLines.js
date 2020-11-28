@@ -1,3 +1,4 @@
+const getDifference = require("./getDifference");
 
 function similarity(s1, s2) {
     var longer = s1;
@@ -92,77 +93,35 @@ function lineSetter(deleted, added) {
         }
     }
 
-    //console.log(delStack)
-
     return dictList;
 }
 
-arr_deleted = [
-    "currentTarget.setBaseSpeed(currentTarget.getBaseSpeed()/2);",
-    "Double d_min = 3.3 * 30;",
-    "Double d_max = 3.3 * 300;"
-    ]
-
-arr_added = [
-    "Double d_min = 3.3 * 1;",    
-    "opponentsHit.add(currentTarget.getID());",
-    "Double d_max = 3.3 * 5;",
-    "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
-]
-
-console.log(lineSetter(arr_deleted, arr_added))
 
 
+// EXAMPLE
+
+// arr_deleted = [
+//     "currentTarget.setBaseSpeed(currentTarget.getBaseSpeed()/2);",
+//     "Double d_min = 3.3 * 8374;",
+//     "Double d_max = 3.3 * 300;"
+//     ]
+
+// arr_added = [
+//     "Double d_min = 3.3 * 30;",  
+//     "opponentsHit.add(currentTarget.getID());",
+//     "Double d_max = 3.3 * 5;",
+//     "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
+// ]
+
+// arr = lineSetter(arr_deleted, arr_added)
+
+// for (var x = 0; x < arr.length; x++) {
+//     console.log(getDifference(arr[x]));
+// }
 
 
 
 
 
-// OLD FUNC
 
-// function lineSetter(deleted, added) {
-//     var dictList = [];
-//     var used_index_deleted = [];
-//     var used_index_added = [];
-//     for (var i = 0; i < deleted.length; i++) {
-//         var best = 0;
-//         var oldS = "";
-//         var newS = "";
-//         var usedI = null;
-//         var usedJ = null;
-//         for (var j = 0; j < added.length; j++) {
-//             var x = similarity(deleted[i], added[j]);
-//             if (x > best) {
-//                 best = x;
-//                 oldS = deleted[i];
-//                 newS = added[j];
-//                 usedI = i;
-//                 usedJ = j;
-//             }
-//         }
-//         if (best > 0.75) {
-//             for (var k = 0; k < usedJ; k++) {
-//                 if (!used_index_added.includes(k)) {
-//                     dict = {old: null, new: added[k]};
-//                     dictList.push(dict);
-//                 }
-//             }
-//             dict = {old: oldS, new: newS};
-//             dictList.push(dict);
-//             used_index_added.push(usedJ);
-//             used_index_deleted.push(usedI);
-//         } else {
-//             dict = {old: oldS, new: null};
-//             dictList.push(dict);
-//         }
-//     }
 
-//     if (used_index_added.length > 0) {
-//         for (var k = used_index_added[used_index_added.length - 1]; k < added.length; k++) {
-//             dict = {old: null, new: added[k]};
-//             dictList.push(dict);
-//         }
-//     }
-
-//     return dictList;
-//}

@@ -1,3 +1,5 @@
+
+
 /**
  * @param {string} string1
  * @param {string} string2
@@ -6,10 +8,14 @@
 
 // Get differences in a string recursively return a list containing dictionaries and common strings
 
-function getDifference(dict) {
+module.exports = function getDifference(dict) {
 
     string1 = dict.old
     string2 = dict.new
+
+    if (string1 == null || string2 == null) {
+      return [dict];
+    }
 
     const s1 = [...string1];
     const s2 = [...string2];
@@ -85,10 +91,12 @@ function getDifference(dict) {
     if (longestSubstring.length < 5) {
         return [dict];
     }
-    return [...getDifferences({old: leftOld, new: leftNew}), longestSubstring, ...getDifferences({old: rightOld, new: rightNew})];
+    return [...getDifference({old: leftOld, new: leftNew}), longestSubstring, ...getDifference({old: rightOld, new: rightNew})];
 
     
   }
+
+
 
 // EXAMPLE USE:
 
