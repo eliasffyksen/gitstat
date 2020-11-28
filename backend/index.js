@@ -7,12 +7,8 @@ const db = require('./db')({
 
 (async () => {
     await db.connect();
-    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare = 1);
-    getNewCommits(repo, async (commit) => {
-        await getCommitDiff(commit);
-    });
 
-    checkRepos();
+    setInterval(() => checkRepos(), 1000);
 })();
 
 async function addRepo(id, url) {
@@ -24,11 +20,18 @@ async function addRepo(id, url) {
 
 async function checkRepos() {
     const cursor = await db.getRepos();
-    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare = 1);
-    updateRepo(repo);
+    cursor.each(async (e, repo) => {
+        if (e != null) {
+            console.error(e);
+            return;
+        }
+
+        const gitRepo = await nodegit.Repository.init("data/" + repo.id, is_bare = 1);
+        updateRepo(repo, gitRepo);
+    });
 }
 
-async function updateRepo(repo) {
+async function updateRepo(dbRepo, repo) {
     const head = await repo.getHeadCommit();
 
     const revwalk = repo.createRevWalk();
@@ -41,7 +44,7 @@ async function updateRepo(repo) {
 
     for (const commit of commits) {
         const author = commit.author();
-        r.table('commits').insert({
+        const result = await r.table('commits').insert({
             id: commit.id().tostrS(),
             author: {
                 name: author.name(),
@@ -49,7 +52,12 @@ async function updateRepo(repo) {
                 time: author.when(),
             },
             files: await getCommitDiff(commit),
+            repo: dbRepo.id,
         }).run(db.conn);
+
+        if (result.inserted) {
+            console.log("Added commit " + commit.id().tostrS());
+        }
     }
 }
 
@@ -91,22 +99,4 @@ async function getFileDiff(patch) {
     }
 
     return ret;
-}
-
-async function getNewCommits(repo, callback, oldCommit = null) {
-    const head = await repo.getHeadCommit();
-    const revwalk = repo.createRevWalk();
-    revwalk.push(head);
-    if (oldCommit != null) {
-        revwalk.hide(oldCommit);
-    }
-
-    let commits = await revwalk.getCommits();
-    while (commits.length > 0) {
-        for (const commit of commits) {
-            await callback(commit);
-        }
-
-        commits = await revwalk.getCommits();
-    }
 }

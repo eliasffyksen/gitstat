@@ -19,8 +19,8 @@ class Database {
 
     async addRepo(url, name) {
         const result = await r.table('repos').insert({
-            name: name,
             url: url,
+            name: name,
         }).run(this.conn);
         
         if (result.inserted == 1) {
