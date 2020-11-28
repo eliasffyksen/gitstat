@@ -4,15 +4,10 @@
  * @return {string}
  */
 
-String.prototype.replaceAt = function(index, replacement) {
-    return this.substr(0, index) + replacement + this.substr(index + replacement.length);
-}
+// Get differences in a string recursively return a list containing dictionaries and common strings
 
-function longestCommonSubstring(dict) {
-    // Convert strings to arrays to treat unicode symbols length correctly.
-    // For example:
-    // '𐌵'.length === 2
-    // [...'𐌵'].length === 1
+function getDifference(dict) {
+
     string1 = dict.old
     string2 = dict.new
 
@@ -63,10 +58,6 @@ function longestCommonSubstring(dict) {
   
     // Detect the longest substring from the matrix.
     let longestSubstring = '';
-  
-    // console.log(longestSubstringColumn);
-    // console.log(longestSubstringLength);
-    // console.log(longestSubstringRow);
 
     var length = longestSubstringLength;
     var endIndex1 =  longestSubstringColumn;
@@ -77,8 +68,6 @@ function longestCommonSubstring(dict) {
       longestSubstringRow -= 1;
       longestSubstringColumn -= 1;
     }
-
-
 
     for (let i = endIndex2-length; i < endIndex2; i += 1) {
         s2[i] = "";
@@ -93,23 +82,27 @@ function longestCommonSubstring(dict) {
     var rightOld = string1.substr(endIndex1);
     var rightNew = string2.substr(endIndex2);
 
-    
-
     if (longestSubstring.length < 5) {
         return [dict];
     }
-    return [...longestCommonSubstring({old: leftOld, new: leftNew}), longestSubstring, ...longestCommonSubstring({old: rightOld, new: rightNew})];
+    return [...getDifferences({old: leftOld, new: leftNew}), longestSubstring, ...getDifferences({old: rightOld, new: rightNew})];
 
     
   }
 
-var stringOld = "ySystem.out.print(\"Hello World! \" + 44*2)";
-var stringNew = "xxSystem.out.print(\"Greetings World! \" + 44*3)";
-var dictionary = {old: stringOld, new:stringNew}
+// EXAMPLE USE:
 
-console.log(longestCommonSubstring(dictionary));
+// var stringOld = "ySystem.out.print(\"Hello World! \" + 44*2)";
+// var stringNew = "xxSystem.out.print(\"Greetings World! \" + 44*3)";
+// var dictionary = {old: stringOld, new:stringNew}
+// console.log(longestCommonSubstring(dictionary));
 
-//var call = longestCommonSubstring(dictionary);
+// Output:
 
-//var change = [ {old: '', new: 'xx'}, 'System.out.print(', {}];
-
+//    [
+//      { old: 'y', new: 'xx' },
+//      'System.out.print("',
+//      { old: 'Hello', new: 'Greetings' },
+//      ' World! " + 44*',
+//      { old: '2)', new: '3)' }
+//    ]
