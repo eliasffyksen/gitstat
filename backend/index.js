@@ -1,19 +1,18 @@
 const nodegit = require("nodegit");
-const fs = require('fs');
+const r = require('rethinkdb');
 const db = require('./db')({
     host: 'localhost',
     db: 'gitstat',
 });
 
-const url = "https://github.com/hfreeb/hafos";
-const name = "hafos";
-
 (async () => {
     await db.connect();
-    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare=1);
+    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare = 1);
     getNewCommits(repo, async (commit) => {
-        console.log(JSON.stringify(await getCommitDiff(commit), null, 2));
+        await getCommitDiff(commit);
     });
+
+    checkRepos();
 })();
 
 async function addRepo(id, url) {
@@ -25,6 +24,33 @@ async function addRepo(id, url) {
 
 async function checkRepos() {
     const cursor = await db.getRepos();
+    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare = 1);
+    updateRepo(repo);
+}
+
+async function updateRepo(repo) {
+    const head = await repo.getHeadCommit();
+
+    const revwalk = repo.createRevWalk();
+    revwalk.push(head);
+
+    const commits = await revwalk.getCommitsUntil(async commit => {
+        const row = await r.table('commits').get(commit.id().tostrS()).run(db.conn);
+        return row == null;
+    });
+
+    for (const commit of commits) {
+        const author = commit.author();
+        r.table('commits').insert({
+            id: commit.id().tostrS(),
+            author: {
+                name: author.name(),
+                email: author.email(),
+                time: author.when(),
+            },
+            files: await getCommitDiff(commit),
+        }).run(db.conn);
+    }
 }
 
 async function getCommitDiff(commit) {
@@ -56,16 +82,16 @@ async function getFileDiff(patch) {
         const lines = await hunk.lines();
 
         for (const line of lines) {
+            const content = line.content().replace("\n", "");
             ret.push({
-                old: line.oldLineno() == - 1 ? null : line.content(),
-                new: line.newLineno() == -1 ? null : line.content(),
+                old: line.oldLineno() == -1 ? null : content,
+                new: line.newLineno() == -1 ? null : content,
             });
         }
     }
 
     return ret;
 }
-
 
 async function getNewCommits(repo, callback, oldCommit = null) {
     const head = await repo.getHeadCommit();
