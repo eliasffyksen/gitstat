@@ -8,6 +8,8 @@ const io = require('socket.io')(http, {
     }
 });
 
+const dummydata = require('./dummydata');
+
 app.use(express.static(`${__dirname}/../frontend/public`));
 
 let nextId = 0;
@@ -17,12 +19,7 @@ io.on('connection', (socket) => {
 
     socket.on('repo', (name) => {
         console.log('user', user.id, 'requested repo', name);
-        socket.emit('patch', 'first/patch.file', [
-            { old: 'same', new: 'same'},
-            { old: 'old', new: null},
-            { new: null, new: 'new'},
-            { old: 'alsoSame', new: 'alsoSame'}
-        ])
+        socket.emit('patch', 'first/patch.file', dummydata);
     });
 
     socket.on('disconnect', (socket) => {
