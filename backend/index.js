@@ -10,7 +10,10 @@ const name = "hafos";
 
 (async () => {
     await db.connect();
-    checkRepos();
+    const repo = await nodegit.Repository.init("data/223d05dc-561d-46f1-af67-97eba569b08d", is_bare=1);
+    getNewCommits(repo, async (commit) => {
+        console.log(JSON.stringify(await getCommitDiff(commit), null, 2));
+    });
 })();
 
 async function addRepo(id, url) {
@@ -24,28 +27,49 @@ async function checkRepos() {
     const cursor = await db.getRepos();
 }
 
-async function processCommit(commit) {
-    const diffs = await commit.getDiff();
+async function getCommitDiff(commit) {
+    const files = [];
+
+    const diffs = await commit.getDiffWithOptions({
+        contextLines: 2000,
+    });
+
     for (const diff of diffs) {
         const patches = await diff.patches();
         for (const patch of patches) {
-            //console.log("file " + patch.oldFile().path() + " -> " + patch.newFile().path());
-            const hunks = await patch.hunks();
-            for (const hunk of hunks) {
-                const lines = await hunk.lines();
-                for (const line of lines) {
-                    //console.log("line " + line.oldLineno() + " -> " + line.newLineno());
-                    //console.log(line.content());
-                }
-            }
+            const content = await getFileDiff(patch);
+            files.push({
+                name: patch.newFile().path(),
+                content: content,
+            });
         }
     }
+
+    return files;
+}
+
+async function getFileDiff(patch) {
+    const ret = [];
+
+    const hunks = await patch.hunks();
+    for (const hunk of hunks) {
+        const lines = await hunk.lines();
+
+        for (const line of lines) {
+            ret.push({
+                old: line.oldLineno() == - 1 ? null : line.content(),
+                new: line.newLineno() == -1 ? null : line.content(),
+            });
+        }
+    }
+
+    return ret;
 }
 
 
 async function getNewCommits(repo, callback, oldCommit = null) {
     const head = await repo.getHeadCommit();
-    const revwalk = await nodegit.Revwalk.create(repo);
+    const revwalk = repo.createRevWalk();
     revwalk.push(head);
     if (oldCommit != null) {
         revwalk.hide(oldCommit);
@@ -54,7 +78,7 @@ async function getNewCommits(repo, callback, oldCommit = null) {
     let commits = await revwalk.getCommits();
     while (commits.length > 0) {
         for (const commit of commits) {
-            callback(commit);
+            await callback(commit);
         }
 
         commits = await revwalk.getCommits();
