@@ -44,6 +44,8 @@ function lineSetter(deleted, added) {
     var dictList = [];
     var delStack = [];
     var addStack = [];
+    deleted = deleted.reverse();
+    added = added.reverse();
     for (var i = 0; i < deleted.length; i++) {
         delStack.push(deleted[i])
     }
@@ -109,6 +111,10 @@ arr_added = [
 ]
 
 console.log(lineSetter(arr_deleted, arr_added))
+
+
+
+
 
 
 
