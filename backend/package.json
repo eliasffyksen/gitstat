@@ -1,0 +1,17 @@
+{
+  "name": "gitstat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodegit": "^0.27.0",
+    "nodemon": "^2.0.6",
+    "rethinkdb": "^2.4.2"
+  }
+}
