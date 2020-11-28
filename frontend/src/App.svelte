@@ -1,10 +1,11 @@
 <script>
+	import CodeViewer from './code-viewer/CodeViewer.svelte';
 	export let name;
 </script>
 
 <main>
 	<h1>Welcome to {name}!</h1>
-	
+	<CodeViewer></CodeViewer>
 </main>
 
 <style>
