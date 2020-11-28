@@ -1,31 +1,20 @@
 <script>
+	import { onMount } from 'svelte';
+
 	import CodeViewer from './code-viewer/CodeViewer.svelte';
-	export let name;
+
+	let lines = [];
+	onMount(() => {
+        fetch("https://jsonplaceholder.typicode.com/todos")
+            .then((res) => res.text())
+			.then((text) => (lines = text.split("\n")));
+	});
+
 </script>
 
-<main>
-	<h1>Welcome to {name}!</h1>
-	<CodeViewer></CodeViewer>
+<main class="h-screen v-screen flex flex-col">
+	<CodeViewer lines={lines}></CodeViewer>
 </main>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
-
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
-	}
 </style>
