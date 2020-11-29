@@ -2,5 +2,9 @@
     {
         "name": "hafos",
         "url": "https://github.com/hfreeb/hafos"
+    },
+    {
+        "name": "gitstat",
+        "url": "https://github.com/eliasffyksen/gitstat.git"
     }
 ]

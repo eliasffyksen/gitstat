@@ -7,6 +7,9 @@
 	let title = "";
 	let scroll;
 	let repos = [];
+	let branches = [];
+	let selectedRepo = null;
+	let running = false;
 	let cursor = {
 		line: 0,
 		char: Infinity,
@@ -26,10 +29,17 @@
 		socket.on("repos", (newRepos) => {
 			repos = newRepos;
 		});
+		socket.on("branches", (newBranches) => {
+			branches = newBranches;
+		});
 		socket.on("commit", async (commit) => {
+			if (running) {
+				console.error('RECIEVED COMMIT WHILE RUNNING!!!');
+				return;
+			}
+			running = true;
+
 			for (let file of commit.files) {
-				if (file.name == 'LICENSE')
-					continue;
 				let patch = file.content;
 				title = file.name;
 				lines = patch.reduce((arr, element) => {
@@ -41,7 +51,9 @@
 				scroll();
 				let linesToDelete = 0;
 				await sleep(0);
+				if (!running) return;
 				for (let i = 0; i < patch.length; ) {
+					if (!running) return;
 					if (patch[i].new == null) {
 						linesToDelete++;
 						cursor.line++;
@@ -55,6 +67,7 @@
 								lines[cursor.line].length - 1
 							);
 							await sleep(editSpeed / 2);
+							if (!running) return;
 						}
 						lines.splice(cursor.line, 1);
 						linesToDelete--;
@@ -65,6 +78,7 @@
 							lines[cursor.line] += c;
 							if (c == " ") continue;
 							await sleep(editSpeed);
+							if (!running) return;
 						}
 						cursor.line++;
 						i++;
@@ -73,14 +87,24 @@
 						cursor.line++;
 					}
 				}
-				socket.emit("next_patch");
 			}
-			socket.emit('commit', commit.repo, commit.id);
+			socket.emit("watch_commit", commit.repo, commit.id);
+			running = false;
+			socket.emit("ready");
 		});
 	});
 
 	function selectRepo(repoId) {
-		socket.emit("commit", repoId, null);
+		selectRepo = repoId;
+		socket.emit("branches", repoId);
+	}
+
+	async function selectCommit(commit) {
+		running = false;
+		socket.emit("block");
+		socket.emit("clear");
+		socket.emit("watch_commit", selectRepo, null);
+		socket.emit("ready");
 	}
 </script>
 
@@ -92,8 +116,14 @@
 		<select>
 			<option disabled selected>Select repo</option>
 			{#each repos as repo}
-				<option on:click={() => selectRepo(repo.id)} value={repo.id}>
-					{repo.name}
+				<option on:click={() => selectRepo(repo)}>{repo}</option>
+			{/each}
+		</select>
+		<select>
+			<option disabled selected>Select branch</option>
+			{#each branches as branch}
+				<option on:click={() => selectCommit(branch.head)}>
+					{branch.name}
 				</option>
 			{/each}
 		</select>
