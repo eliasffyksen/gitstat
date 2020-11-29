@@ -7,15 +7,12 @@ const db = require('./db')({
 
 (async () => {
     await db.connect();
-
     setInterval(() => checkRepos(), 1000);
 })();
 
-async function addRepo(id, url) {
-    const repo = await nodegit.Clone(url, "data/" + id);
-    await getNewCommits(repo, async (commit) => {
-        await processCommit(commit);
-    });
+async function addRepo(dbRepo) {
+    const repo = await nodegit.Clone(dbRepo.url, "data/" + dbRepo.id);
+    updateRepo(dbRepo, repo);
 }
 
 async function checkRepos() {

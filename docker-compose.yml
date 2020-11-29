@@ -6,6 +6,6 @@ services:
       - rdb-data:/data
     ports:
       - 8080:8080
-      - 2805:2805
+      - 28015:28015
 volumes:
   rdb-data:
