@@ -5,6 +5,7 @@
 
 	let lines = [];
 	let scoreboard = [];
+	let commitMsgs = [];
 	let title = "";
 	let progress = 0;
 	let scroll;
@@ -57,7 +58,19 @@
 			}
 			running = true;
 
+			commitMsgs = [`${commit.message} - ${commit.author.name}`, ...commitMsgs];
+
 			for (let file of commit.files) {
+
+				let skip = false;
+				for (let name of ['README', 'package-lock', 'dummydata']) {
+					if (file.name.includes(name)) {
+						skip = true;
+					}
+				}
+				if (skip)
+					continue;
+
 				let patch = file.content;
 				title = file.name;
 				lines = patch.reduce((arr, element) => {
@@ -72,6 +85,7 @@
 				if (!running) return;
 				progress = 0;
 				for (let i = 0; i < patch.length; ) {
+					
 					progress = i / patch.length;
 					if (!running) return;
 					if (patch[i].new == null) {
@@ -162,11 +176,16 @@
 		</div>
 		<CodeViewer {title} {lines} {cursor} bind:scroll />
 	</div>
-	<div style="flex-basis: 30rem;flex-shrink: 0;">
+	<div class="overflow-hidden" style="flex-basis: 30rem;flex-shrink: 0;">
 		<h1 class="text-xl mt-4">Scoreboard:</h1>
 		{#each scoreboard as user}
 			<div>{user.name}: {user.points}</div>
 		{/each}
+		<h1 class="text-xl mt-4">Commits:</h1>
+		{#each commitMsgs as msg}
+			<div>{msg}</div>
+		{/each}
 	</div>
+
 </main>
 

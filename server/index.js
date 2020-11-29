@@ -156,6 +156,7 @@ async function addToWatchList(user, repo, commit) {
 
     let docs = await r.table('commits')
         .filter(r.row('repo').eq(repo))
+        .filter(r.row('parents').count().lt(2))
         .filter(r.row('parents').contains(commit))
         .run(conn)
         .then(cursor => cursor.toArray());
