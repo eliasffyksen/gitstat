@@ -52,6 +52,7 @@ async function updateRepo(name, repo) {
         const parents = commit.parents().map(oid => oid.tostrS());
         const result = await r.table('commits').insert({
             id: commit.id().tostrS(),
+            message: commit.message(),
             author: {
                 name: author.name(),
                 email: author.email(),
