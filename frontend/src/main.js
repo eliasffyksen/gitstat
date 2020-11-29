@@ -3,9 +3,7 @@ import "tailwindcss/dist/tailwind.min.css";
 
 const app = new App({
 	target: document.body,
-	props: {
-		name: 'GitStat'
-	}
+	props: {}
 });
 
 export default app;

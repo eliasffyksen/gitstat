@@ -1,20 +1,85 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
-	import CodeViewer from './code-viewer/CodeViewer.svelte';
+	import CodeViewer from "./code-viewer/CodeViewer.svelte";
 
 	let lines = [];
+	let title = "";
+	let cursor = {
+		line: 0,
+		char: Infinity,
+	};
+	let socket;
+	const editSpeed = 0;
+
+	function sleep(time) {
+		return new Promise((res, rej) => {
+			setTimeout(res, time);
+		});
+	}
+
 	onMount(() => {
-        fetch("https://jsonplaceholder.typicode.com/todos")
-            .then((res) => res.text())
-			.then((text) => (lines = text.split("\n")));
+		socket = io("localhost:3000");
+		socket.on("connect", () => {
+			socket.emit("repo", "linux-kernel");
+			socket.emit("next_patch");
+		});
+		socket.on("patch", async (newTitle, patch) => {
+			console.log(patch);
+
+			title = newTitle;
+			lines = patch.reduce((arr, element) => {
+				if (element.old != null)
+					arr.push(element.old);
+				return arr;
+			}, []);
+
+			cursor.line = 0;
+			let linesToDelete = 0;
+			await sleep(1000);
+			for (let i = 0; i < patch.length;) {
+				if (patch[i].new == null) {
+					linesToDelete++;
+					cursor.line++;
+					i++;
+				} else if (linesToDelete > 0) {
+					scroll();
+					cursor.line--;
+					while (lines[cursor.line].length > 0) {
+						lines[cursor.line] = lines[cursor.line].substr(
+							0,
+							lines[cursor.line].length - 1
+						);
+						await sleep(editSpeed / 2);
+					}
+					lines.splice(cursor.line, 1);
+					linesToDelete--;
+				} else if (patch[i].old == null) {
+					scroll();
+					lines.splice(cursor.line, 0, '');
+					for (let c of patch[i].new) {
+						lines[cursor.line] += c;
+						if (c == ' ')
+							continue;
+						await sleep(editSpeed);
+
+					}
+					cursor.line++;
+					i++;
+				} else {
+					i++;
+					cursor.line++;
+				}
+			}
+			socket.emit("next_patch");
+		});
 	});
-
+	let scroll;
 </script>
-
-<main class="h-screen v-screen flex flex-col">
-	<CodeViewer lines={lines}></CodeViewer>
-</main>
 
 <style>
 </style>
+
+<main class="h-screen v-screen flex flex-col">
+	<CodeViewer {title} {lines} {cursor} bind:scroll={scroll} />
+</main>
