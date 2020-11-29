@@ -96,7 +96,7 @@ function lineSetter(deleted, added) {
     return dictList;
 }
 
-
+module.exports = lineSetter;
 
 //EXAMPLE
 

@@ -6,6 +6,9 @@ const db = require('./db')({
     db: 'gitstat',
 });
 
+const getDifference = require("../algorithms/getDifference");
+const lineSetter = require("../algorithms/matchLines");
+
 const repos = require('./repos.json');
 
 (async () => {
@@ -52,6 +55,7 @@ async function updateRepo(name, repo) {
         const parents = commit.parents().map(oid => oid.tostrS());
         const result = await r.table('commits').insert({
             id: commit.id().tostrS(),
+            message: commit.message().replace("\n", ""),
             author: {
                 name: author.name(),
                 email: author.email(),
@@ -103,12 +107,35 @@ async function getFileDiff(patch) {
     for (const hunk of hunks) {
         const lines = await hunk.lines();
 
-        for (const line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             const content = line.content().replace("\n", "");
-            ret.push({
-                old: line.oldLineno() == -1 ? null : content,
-                new: line.newLineno() == -1 ? null : content,
-            });
+            if (line.oldLineno() != -1 && line.newLineno() != -1) {
+                ret.push(content);
+                continue;
+            }
+
+            const added = [];
+            const removed = [];
+            // read block of inserts/removes until we reach an unchanged line
+            while (true) {
+                const content = lines[i].content().replace("\n", "");
+                if (lines[i].oldLineno() == -1) {
+                    added.push(content);
+                } else {
+                    removed.push(content);
+                }
+
+                if (i + 1 >= lines.length || (lines[i + 1].oldLineno() != -1 && lines[i + 1].newLineno() != -1)) {
+                    break;
+                }
+
+                i++;
+            }
+
+            const arr = lineSetter(removed, added)
+
+            ret.push(...arr.map(x => getDifference(x)));
         }
     }
 
