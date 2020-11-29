@@ -1,5 +1,6 @@
 <script>
     import { onMount, onDestroy } from "svelte";
+import App from "../App.svelte";
 
     export let title = 'path/to/file.code repo/brach (username)';
     export let lines = [];
@@ -23,23 +24,25 @@
     });
 
     export function scroll() {
-        if (!cursorElement)
+        if (!cursorElement) {
+            offset = 0;
             return;
+        }
         offset = 
             cursorElement.getBoundingClientRect().top
             - codeTable.getBoundingClientRect().top
-            - editor.getBoundingClientRect().height / 3;
-        offset = Math.min(offset, codeTable.getBoundingClientRect().height - editor.getBoundingClientRect().height);
-        offset = Math.max(offset, 0);
+            - editor.getBoundingClientRect().height / 2;
+        // offset = Math.min(offset, codeTable.getBoundingClientRect().height - editor.getBoundingClientRect().height);
+        // offset = Math.max(offset, 0);
     }
 </script>
 
 <style>
 </style>
-<div class="flex flex-col flex-shrink overflow-hidden bg-gray-900">
+<div class="flex flex-col flex-shrink flex-grow overflow-hidden bg-gray-900">
     <h1 class="text-xl text-center bg-gray-900 text-white border-4 border-gray-700">{title}</h1>
-    <div bind:this={editor} class="overflow-hidden">
-        <table bind:this={codeTable} class="relative" style="transition: top {scrollSpeed}; top: -{offset}px;">
+    <div bind:this={editor} class="overflow-hidden flex-grow">
+        <table bind:this={codeTable} class="relative" style="top: -{offset}px;">
             {#each lines as line, lineNum}
                 <tr class="text-white">
                     <td class="text-right bg-gray-700 text-yellow-500 px-1">

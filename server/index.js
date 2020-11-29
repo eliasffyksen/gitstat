@@ -7,87 +7,22 @@ const io = require('socket.io')(http, {
         origin: '*'
     }
 });
+const repos = [];
+let conn;
+const r = require('rethinkdb')
+r.connect({
+    host: 'localhost',
+    db: 'gitstat'
+}).then((newConn) => {
+    conn = newConn;
+    console.log('connected to db');
+    return r.table('repos').pluck(['id', 'name']).run(conn);
+}).then((cursor) => {
+    return cursor.next();
+}).then((data) => {
+    repos.push(data);
+});
 
-const dummydata = [
-    [
-        {
-            "old": "#include <stdio.h>",
-            "new": "#include <stdio.h>"
-          },
-          {
-            "old": "#include <stdint.h>",
-            "new": "#include <stdint.h>"
-          },
-          {
-            "old": "#include <limits.h>",
-            "new": "#include <limits.h>"
-          },
-          {
-            "old": "#include <stdbool.h>",
-            "new": "#include <stdbool.h>"
-          },
-          {
-            "old": "#include <stdio.h>",
-            "new": "#include <stdio.h>"
-          },
-          {
-            "old": "#include <string.h>",
-            "new": "#include <string.h>"
-          },
-        //   {
-        //     "old": null,
-        //     "new": "#include <ctype.h>"
-        //   },
-          {
-            "old": "",
-            "new": ""
-          },
-          {
-            "old": "enum format_type {",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_NONE, // Just a string part",
-            "new": null
-          },
-          {
-            "old": "    FORMAT_TYPE_WIDTH,",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_CHAR,",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_STR,",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_PERCENT_CHAR,",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_INVALID,",
-            "new": null
-          },
-          {
-            "old": "\tFORMAT_TYPE_INT",
-            "new": null
-          },
-          {
-            "old": "};",
-            "new": null
-          },
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'},
-          {old: 'abc', new: 'abc'}
-    ],
-    require('./dummydata')
-];
 
 app.use(express.static(`${__dirname}/../frontend/public`));
 
@@ -95,15 +30,36 @@ let nextId = 0;
 io.on('connection', (socket) => {
     const user = { id: nextId++, repo: null};
     console.log('user', user.id, 'connected');
+    socket.emit('repos', repos);
 
-    socket.on('repo', (name) => {
-        console.log('user', user.id, 'requested repo', name);
-        user.repo = name;
-        user.currentPatch = 1;
-        user.ready = false;
-    });
+    socket.on('commit', async (repo, commit) => {
+        console.log('user', user.id, 'requested commit', commit, 'from repo', repo);
 
-    socket.on('next_patch', () => {
+        if (commit == null) {
+            let [doc] = await r.table('commits')
+                .filter(r.row('repo').eq(repo))
+                .filter(r.row('parents').count().eq(0))
+                .limit(1)
+                .run(conn)
+                .then(cursor => cursor.toArray());
+            if (doc)
+                socket.emit('commit', doc);
+            else
+                console.error('FAILED TO GET INITIAL COMMIT FROM REPO', repo, '!!!!');
+            return;
+        }
+
+        let [doc] = await r.table('commits')
+            .filter(r.row('repo').eq(repo))
+            .filter(r.row('parents').contains(commit))
+            .limit(1)
+            .run(conn)
+            .then(cursor => cursor.toArray());
+        
+        if (doc)
+            socket.emit('commit', doc);
+        return;
+
         if (user.repo == null) {
             console.log('user', user.id, 'sent next patch before selecting!!!');
             return;
