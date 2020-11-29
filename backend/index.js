@@ -1,34 +1,40 @@
 const nodegit = require("nodegit");
 const r = require('rethinkdb');
+const fs = require('fs');
 const db = require('./db')({
     host: 'localhost',
     db: 'gitstat',
 });
 
+const repos = require('./repos.json');
+
 (async () => {
     await db.connect();
-    setInterval(() => checkRepos(), 1000);
+    loop();
 })();
 
-async function addRepo(dbRepo) {
-    const repo = await nodegit.Clone(dbRepo.url, "data/" + dbRepo.id);
-    updateRepo(dbRepo, repo);
+async function loop() {
+    await checkRepos();
+
+    setTimeout(() => loop(), 2000);
 }
 
 async function checkRepos() {
-    const cursor = await db.getRepos();
-    cursor.each(async (e, repo) => {
-        if (e != null) {
-            console.error(e);
-            return;
+    for (const repo of repos) {
+        let gitRepo;
+        if (fs.existsSync("data/" + repo.name)) {
+            gitRepo = await nodegit.Repository.open("data/" + repo.name);
+        } else {
+            gitRepo = await nodegit.Clone(repo.url, "data/" + repo.name);
         }
 
-        const gitRepo = await nodegit.Repository.init("data/" + repo.id, is_bare = 1);
-        updateRepo(repo, gitRepo);
-    });
+        console.log("Got " + repo.name)
+
+        updateRepo(repo.name, gitRepo);
+    }
 }
 
-async function updateRepo(dbRepo, repo) {
+async function updateRepo(name, repo) {
     const head = await repo.getHeadCommit();
 
     const revwalk = repo.createRevWalk();
@@ -49,7 +55,7 @@ async function updateRepo(dbRepo, repo) {
                 email: author.email(),
             },
             files: await getCommitDiff(commit),
-            repo: dbRepo.id,
+            repo: name,
             parents: parents,
         }).run(db.conn);
 

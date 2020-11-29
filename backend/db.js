@@ -1,13 +1,5 @@
 const r = require('rethinkdb');
 
-class Repo {
-    constructor(id, url, name) {
-        this.id = id;
-        this.url = url;
-        this.name = name;
-    }
-}
-
 class Database {
     constructor(options) {
         this.options = options;
@@ -15,31 +7,6 @@ class Database {
 
     async connect() {
         this.conn = await r.connect(this.options);
-    }
-
-    async addRepo(url, name) {
-        const result = await r.table('repos').insert({
-            url: url,
-            name: name,
-        }).run(this.conn);
-        
-        if (result.inserted == 1) {
-            return new Repo(result.generated_keys[0], url, name);
-        }
-    }
-
-    async getRepos() {
-        return await r.table('repos').run(this.conn);
-    }
-
-    async latestCommit(repo) {
-        const row = await r.table('repos').get(repo.id).values().run(this.conn);
-        return row.commit;
-    }
-
-    async setLastCommit(repo, commit) {
-        const result = await r.table('repos').get(repo.id).update({commit: commit}).run(this.conn);
-        return result.replaced == 1;
     }
 }
 
