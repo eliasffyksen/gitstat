@@ -15,7 +15,7 @@
 		char: Infinity,
 	};
 	let socket;
-	const editSpeed = 0;
+	const editSpeed = 100;
 
 	function sleep(time) {
 		return new Promise((res, rej) => {
@@ -33,19 +33,37 @@
 			branches = newBranches;
 		});
 		socket.on("commit", async (commit) => {
+			console.log(commit.id);
 			if (running) {
-				console.error('RECIEVED COMMIT WHILE RUNNING!!!');
+				console.error("RECIEVED COMMIT WHILE RUNNING!!!");
 				return;
 			}
 			running = true;
 
 			for (let file of commit.files) {
+				console.log(file.content);
 				let patch = file.content;
 				title = file.name;
 				lines = patch.reduce((arr, element) => {
-					if (element.old != null) arr.push(element.old);
+					if (typeof element == "string") {
+						arr.push(element);
+						return arr;
+					}
+					let str = "";
+					for (let e of element) {
+						if (typeof e == "string") {
+							str += e;
+							continue;
+						}
+						if (e.old)
+							str += e.old;
+					}
+					arr.push(str);
 					return arr;
 				}, []);
+				lines.forEach(s => console.log(s));
+				lines = [...lines];
+				return;
 
 				cursor.line = 0;
 				scroll();
@@ -53,14 +71,13 @@
 				await sleep(0);
 				if (!running) return;
 				for (let i = 0; i < patch.length; ) {
+					console.log(patch[i]);
 					if (!running) return;
-					if (patch[i].new == null) {
-						linesToDelete++;
-						cursor.line++;
+					scroll();
+					if (typeof patch[i] == "string") {
 						i++;
-					} else if (linesToDelete > 0) {
-						scroll();
-						cursor.line--;
+						cursor.line++;
+					} else if (patch[i][0].new == null) {
 						while (lines[cursor.line].length > 0) {
 							lines[cursor.line] = lines[cursor.line].substr(
 								0,
@@ -70,22 +87,46 @@
 							if (!running) return;
 						}
 						lines.splice(cursor.line, 1);
-						linesToDelete--;
-					} else if (patch[i].old == null) {
-						scroll();
-						lines.splice(cursor.line, 0, "");
-						for (let c of patch[i].new) {
-							lines[cursor.line] += c;
-							if (c == " ") continue;
-							await sleep(editSpeed);
-							if (!running) return;
-						}
-						cursor.line++;
-						i++;
+						lines = [...lines];
+					} else if (patch[i][0].old == null) {
+						console.log('I should add?', patch[i][0]);
+						return;
 					} else {
-						i++;
-						cursor.line++;
+						console.log('wtf', patch[i]);
+						return;
 					}
+					// if (patch[i].new == null) {
+					// 	linesToDelete++;
+					// 	cursor.line++;
+					// 	i++;
+					// } else if (linesToDelete > 0) {
+					// 	scroll();
+					// 	cursor.line--;
+					// 	while (lines[cursor.line].length > 0) {
+					// 		lines[cursor.line] = lines[cursor.line].substr(
+					// 			0,
+					// 			lines[cursor.line].length - 1
+					// 		);
+					// 		await sleep(editSpeed / 2);
+					// 		if (!running) return;
+					// 	}
+					// 	lines.splice(cursor.line, 1);
+					// 	linesToDelete--;
+					// } else if (patch[i].old == null) {
+					// 	scroll();
+					// 	lines.splice(cursor.line, 0, "");
+					// 	for (let c of patch[i].new) {
+					// 		lines[cursor.line] += c;
+					// 		if (c == " ") continue;
+					// 		await sleep(editSpeed);
+					// 		if (!running) return;
+					// 	}
+					// 	cursor.line++;
+					// 	i++;
+					// } else {
+					// 	i++;
+					// 	cursor.line++;
+					// }
 				}
 			}
 			socket.emit("watch_commit", commit.repo, commit.id);
@@ -103,7 +144,11 @@
 		running = false;
 		socket.emit("block");
 		socket.emit("clear");
-		socket.emit("watch_commit", selectRepo, null);
+		socket.emit(
+			"watch_commit",
+			"hafos",
+			"20117fe14e404a5a2648ac96fadba00df2e98dbf"
+		);
 		socket.emit("ready");
 	}
 </script>
