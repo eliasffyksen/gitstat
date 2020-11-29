@@ -24,11 +24,13 @@ async function checkRepos() {
         let gitRepo;
         if (fs.existsSync("data/" + repo.name)) {
             gitRepo = await nodegit.Repository.open("data/" + repo.name);
+            await gitRepo.fetch("origin");
+
+            const currentBranch = await gitRepo.getCurrentBranch();
+            await gitRepo.mergeBranches(currentBranch, "refs/remotes/origin/" + currentBranch.shorthand());
         } else {
             gitRepo = await nodegit.Clone(repo.url, "data/" + repo.name);
         }
-
-        console.log("Got " + repo.name)
 
         updateRepo(repo.name, gitRepo);
     }
