@@ -41,15 +41,16 @@ async function updateRepo(dbRepo, repo) {
 
     for (const commit of commits) {
         const author = commit.author();
+        const parents = commit.parents().map(oid => oid.tostrS());
         const result = await r.table('commits').insert({
             id: commit.id().tostrS(),
             author: {
                 name: author.name(),
                 email: author.email(),
-                time: author.when(),
             },
             files: await getCommitDiff(commit),
             repo: dbRepo.id,
+            parents: parents,
         }).run(db.conn);
 
         if (result.inserted) {
