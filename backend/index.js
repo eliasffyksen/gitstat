@@ -65,6 +65,14 @@ async function updateRepo(name, repo) {
             console.log("Added commit " + commit.id().tostrS());
         }
     }
+
+    const branch = await repo.getCurrentBranch();
+    r.table('branches').insert({
+        id: name + "-" + branch.shorthand(),
+        head: branch.target().tostrS(),
+    }, {
+        conflict: "update",
+    }).run(db.conn);
 }
 
 async function getCommitDiff(commit) {
