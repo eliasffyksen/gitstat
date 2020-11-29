@@ -70,10 +70,10 @@ function lineSetter(deleted, added) {
         else {
             var found = false;
             var count = 0;
-            for (var i = 0; i < delStack.length; i++) {
-                if (similarity(addStack[addStack.length - 1], delStack[delStack.length - (1+i)]) > 0.75) {
+            for (var i = 0; i < addStack.length; i++) {
+                if (similarity(addStack[addStack.length - (1+i)], delStack[delStack.length - 1]) > 0.75) {
                     for (var x = 0; x < count; x++) {
-                        d = {old: delStack.pop(), new: null};
+                        d = {old: null, new: addStack.pop()};
                         dictList.push(d);
                     }
                     d = {old: delStack.pop(), new: addStack.pop()};
@@ -84,7 +84,7 @@ function lineSetter(deleted, added) {
                 count++;
             }
             if (!found) {
-                d = {old: null, new: addStack.pop()};
+                d = {old: delStack.pop(), new: null};
                 dictList.push(d);
             }
 
@@ -98,23 +98,25 @@ function lineSetter(deleted, added) {
 
 
 
-// EXAMPLE
+//EXAMPLE
 
-// arr_deleted = [
-//     "currentTarget.setBaseSpeed(currentTarget.getBaseSpeed()/2);",
-//     "Double d_min = 3.3 * 8374;",
-//     "Double d_max = 3.3 * 300;"
-//     ]
+arr_deleted = [
+    "currentTarget.setBaseSpeed(currentTarget.getBaseSpeed()/2);",
+    "Double d_min = 3.3 * 8374;",
+    "Double d_max = 3.3 * 300;",
+    "asdfasdfaerqefasdf"
+    ]
 
-// arr_added = [
-//     "Double d_min = 3.3 * 30;",  
-//     "opponentsHit.add(currentTarget.getID());",
-//     "Double d_max = 3.3 * 5;", 
-//     "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
-// ]
+arr_added = [
+    "Double d_min = 3.3 * 30;",  
+    "opponentsHit.add(currentTarget.getID());",
+    "Double d_max = 3.3 * 5;", 
+    "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
+]
 
-// arr = lineSetter(arr_deleted, arr_added)
+arr = lineSetter(arr_deleted, arr_added)
 
+console.log(arr)
 // for (var x = 0; x < arr.length; x++) {
 //     console.log(getDifference(arr[x]));
 // }
