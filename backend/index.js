@@ -50,20 +50,23 @@ async function updateRepo(name, repo) {
     for (const commit of commits) {
         const author = commit.author();
         const parents = commit.parents().map(oid => oid.tostrS());
-        const result = await r.table('commits').insert({
-            id: commit.id().tostrS(),
-            message: commit.message(),
-            author: {
-                name: author.name(),
-                email: author.email(),
-            },
-            files: await getCommitDiff(commit),
-            repo: name,
-            parents: parents,
-        }).run(db.conn);
 
-        if (result.inserted) {
-            console.log("Added commit " + commit.id().tostrS());
+        if (parents.length < 2) {
+            const result = await r.table('commits').insert({
+                id: commit.id().tostrS(),
+                message: commit.message(),
+                author: {
+                    name: author.name(),
+                    email: author.email(),
+                },
+                files: await getCommitDiff(commit),
+                repo: name,
+                parents: parents,
+            }).run(db.conn);
+
+            if (result.inserted) {
+                console.log("Added commit " + commit.id().tostrS());
+            }
         }
     }
 
