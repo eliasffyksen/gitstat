@@ -24,7 +24,7 @@
 			setTimeout(res, time);
 		});
 	}
-	
+
 	async function addPoint(name) {
 		for (let user of scoreboard) {
 			if (user.name == name) {
@@ -35,7 +35,7 @@
 				return;
 			}
 		}
-		scoreboard.push({name, points: 1});
+		scoreboard.push({ name, points: 1 });
 		scoreboard = scoreboard.sort((a, b) => {
 			return a.points < b.points;
 		});
@@ -56,58 +56,114 @@
 				return;
 			}
 			running = true;
-
+			let filen = 0;
 			for (let file of commit.files) {
 				let patch = file.content;
 				title = file.name;
 				lines = patch.reduce((arr, element) => {
-					if (element.old != null) arr.push(element.old);
+					let str = "";
+					let add = false;
+					for (let e of element) {
+						if (typeof e == "string") {
+							add = true;
+							str += e;
+						} else if (e.old != null) {
+							add = true;
+							str += e.old;
+						}
+					}
+					// if (element.old != null) arr.push(element.old);
+					if (add) arr.push(str);
 					return arr;
 				}, []);
-
+				console.log(lines);
 				cursor.line = 0;
-				scroll();
-				let linesToDelete = 0;
-				await sleep(0);
-				if (!running) return;
+				cursor.char = Infinity;
+				// await sleep(100);
+				// scroll();
 				progress = 0;
 				for (let i = 0; i < patch.length; ) {
 					progress = i / patch.length;
 					if (!running) return;
-					if (patch[i].new == null) {
-						linesToDelete++;
-						cursor.line++;
-						i++;
-					} else if (linesToDelete > 0) {
-						scroll();
-						cursor.line--;
-						while (lines[cursor.line].length > 0) {
-							lines[cursor.line] = lines[cursor.line].substr(
-								0,
-								lines[cursor.line].length - 1
-							);
-							await sleep(editSpeed / 2);
-							if (!running) return;
-						}
-						lines.splice(cursor.line, 1);
-						linesToDelete--;
-					} else if (patch[i].old == null) {
-						scroll();
-						lines.splice(cursor.line, 0, "");
-						for (let c of patch[i].new) {
-							lines[cursor.line] += c;
-							if (c == " ") continue;
+
+					cursor.char = 0;
+					console.log(patch[i]);
+					for (let e of patch[i]) {
+						// scroll();
+						if (typeof(e) == "string") {
+							cursor.char += e.length;
+						} else if (e.new == null) {
+							cursor.char = Infinity;
+							while (lines[cursor.line].length > 0) {
+								// scroll();
+								lines[cursor.line] = lines[cursor.line].substr(
+									0,
+									lines[cursor.line].length - 1
+								);
+								await sleep(editSpeed);
+							}
+							lines.splice(i, 1);
+							cursor.line--;
+							lines = [...lines];
+							break;
+
+						} else if (e.old == null) {
+							cursor.char = Infinity;
+							lines.splice(cursor.line, 0, '');
 							await sleep(editSpeed);
-							if (!running) return;
+							while (e.new.length > 0) {
+								// scroll();
+								lines[cursor.line] += e.new.substr(0, 1);
+								e.new = e.new.substr(1);
+								await sleep(editSpeed);
+							}
+							lines = [...lines];
+							break;
+						} else {
+							console.log(i, cursor.line, patch[i]);
+							lines = [...lines];
+							return;
 						}
-						await addPoint(commit.author.name);
-						cursor.line++;
-						i++;
-					} else {
-						i++;
-						cursor.line++;
 					}
+					cursor.line++;
+					i++;
+					// if (patch[i].new == null) {
+					// 	linesToDelete++;
+					// 	cursor.line++;
+					// 	i++;
+					// } else if (linesToDelete > 0) {
+					// 	scroll();
+					// 	cursor.line--;
+					// 	while (lines[cursor.line].length > 0) {
+					// 		lines[cursor.line] = lines[cursor.line].substr(
+					// 			0,
+					// 			lines[cursor.line].length - 1
+					// 		);
+					// 		await sleep(editSpeed / 2);
+					// 		if (!running) return;
+					// 	}
+					// 	lines.splice(cursor.line, 1);
+					// 	linesToDelete--;
+					// } else if (patch[i].old == null) {
+					// 	scroll();
+					// 	lines.splice(cursor.line, 0, "");
+					// 	for (let c of patch[i].new) {
+					// 		lines[cursor.line] += c;
+					// 		if (c == " ") continue;
+					// 		await sleep(editSpeed);
+					// 		if (!running) return;
+					// 	}
+					// 	await addPoint(commit.author.name);
+					// 	cursor.line++;
+					// 	i++;
+					// } else {
+					// 	i++;
+					// 	cursor.line++;
+					// }
 				}
+				// if (filen == 1)
+				// 	return;
+				// filen++;
 			}
 			socket.emit("watch_commit", commit.repo, commit.id);
 			running = false;
@@ -124,7 +180,11 @@
 		running = false;
 		socket.emit("block");
 		socket.emit("clear");
-		socket.emit("watch_commit", selectedRepo, commit);
+		socket.emit(
+			"watch_commit",
+			"hafos",
+			"20117fe14e404a5a2648ac96fadba00df2e98dbf"
+		);
 		socket.emit("ready");
 	}
 </script>
@@ -132,8 +192,12 @@
 <style>
 </style>
 
-<main class="flex" style="position: fixed; top: 0; bottom: 0; left: 0; right: 0;">
-	<div class="flex flex-col overflow-hidden" style="flex-basis: 0; flex-grow: 1; flex-shrink: 1;">
+<main
+	class="flex"
+	style="position: fixed; top: 0; bottom: 0; left: 0; right: 0;">
+	<div
+		class="flex flex-col overflow-hidden"
+		style="flex-basis: 0; flex-grow: 1; flex-shrink: 1;">
 		<div>
 			<select>
 				<option disabled selected>Select repo</option>
@@ -169,4 +233,3 @@
 		{/each}
 	</div>
 </main>
-
