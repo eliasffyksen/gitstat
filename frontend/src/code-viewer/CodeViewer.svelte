@@ -39,10 +39,10 @@ import App from "../App.svelte";
 
 <style>
 </style>
-<div class="flex flex-col flex-shrink flex-grow overflow-hidden bg-gray-900">
-    <h1 class="text-xl text-center bg-gray-900 text-white border-4 border-gray-700">{title}</h1>
+<div class="flex flex-col flex-shrink flex-grow overflow-hidden m-2 rounded-lg">
+    <h1 class="text-xl text-center text-red-600 bg-white border-4 border-gray-700">{title}</h1>
     <div bind:this={editor} class="overflow-hidden flex-grow">
-        <table bind:this={codeTable} class="relative" style="top: -{offset}px;">
+        <table bind:this={codeTable} class="relative flex-grow border-4 border-gray-700" style="top: -{offset}px;">
             {#each lines as line, lineNum}
                 <tr class="text-white">
                     <td class="text-right bg-gray-700 text-yellow-500 px-1">

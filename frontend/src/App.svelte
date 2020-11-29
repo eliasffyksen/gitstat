@@ -4,7 +4,9 @@
 	import CodeViewer from "./code-viewer/CodeViewer.svelte";
 
 	let lines = [];
+	let scoreboard = {data: []};
 	let title = "";
+	let progress = 0;
 	let scroll;
 	let repos = [];
 	let branches = [];
@@ -22,6 +24,18 @@
 			setTimeout(res, time);
 		});
 	}
+	
+	async function addPoint(name) {
+		for (let user of scoreboard.data) {
+			if (user.name == name) {
+				user.points++;
+				scoreboard = {data: scoreboard.data};
+				return;
+			}
+		}
+		scoreboard.data.push({name, points: 1});
+		scoreboard = {data: scoreboard.data};
+	}
 
 	onMount(() => {
 		socket = io("localhost:3000");
@@ -34,7 +48,7 @@
 		});
 		socket.on("commit", async (commit) => {
 			if (running) {
-				console.error('RECIEVED COMMIT WHILE RUNNING!!!');
+				console.error("RECIEVED COMMIT WHILE RUNNING!!!");
 				return;
 			}
 			running = true;
@@ -52,7 +66,9 @@
 				let linesToDelete = 0;
 				await sleep(0);
 				if (!running) return;
+				progress = 0;
 				for (let i = 0; i < patch.length; ) {
+					progress = i / patch.length;
 					if (!running) return;
 					if (patch[i].new == null) {
 						linesToDelete++;
@@ -80,6 +96,7 @@
 							await sleep(editSpeed);
 							if (!running) return;
 						}
+						await addPoint(commit.author.name);
 						cursor.line++;
 						i++;
 					} else {
@@ -95,7 +112,7 @@
 	});
 
 	function selectRepo(repoId) {
-		selectRepo = repoId;
+		selectedRepo = repoId;
 		socket.emit("branches", repoId);
 	}
 
@@ -103,7 +120,7 @@
 		running = false;
 		socket.emit("block");
 		socket.emit("clear");
-		socket.emit("watch_commit", selectRepo, commit);
+		socket.emit("watch_commit", selectedRepo, commit);
 		socket.emit("ready");
 	}
 </script>
@@ -111,22 +128,40 @@
 <style>
 </style>
 
-<main class="h-screen v-screen flex flex-col">
-	<div>
-		<select>
-			<option disabled selected>Select repo</option>
-			{#each repos as repo}
-				<option on:click={() => selectRepo(repo)}>{repo}</option>
-			{/each}
-		</select>
-		<select>
-			<option disabled selected>Select branch</option>
-			{#each branches as branch}
-				<option on:click={() => selectCommit(branch.head)}>
-					{branch.name}
+<main class="flex" style="position: fixed; top: 0; bottom: 0; left: 0; right: 0;">
+	<div class="flex flex-col overflow-hidden" style="flex-basis: 0; flex-grow: 1; flex-shrink: 1;">
+		<div>
+			<select>
+				<option disabled selected>Select repo</option>
+				{#each repos as repo}
+					<option on:click={() => selectRepo(repo)}>{repo}</option>
+				{/each}
+			</select>
+			<select>
+				<option disabled selected>Select branch</option>
+				{#each branches as branch}
+					<option on:click={() => selectCommit(branch.head)}>
+						{branch.name}
+					</option>
+				{/each}
+				<option on:click={() => selectCommit(null)}>
+					From begining
 				</option>
-			{/each}
-		</select>
+			</select>
+		</div>
+		<div
+			class="flex m-1 bg-gray-700 rounded-lg overflow-hidden h-4"
+			style="flex-shrink: 0;">
+			<div class="bg-green-600" style="flex-basis: {progress * 100}%">
+				&nbsp;
+			</div>
+		</div>
+		<CodeViewer {title} {lines} {cursor} bind:scroll />
 	</div>
-	<CodeViewer {title} {lines} {cursor} bind:scroll />
+	<div style="flex-basis: 30rem;flex-shrink: 0;">
+		<h1 class="text-xl mt-4">Scoreboard:</h1>
+		{#each scoreboard.data as user}
+			<div>{user.name}: {user.points}</div>
+		{/each}
+	</div>
 </main>
