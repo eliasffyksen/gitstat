@@ -109,7 +109,7 @@ function lineSetter(deleted, added) {
 // arr_added = [
 //     "Double d_min = 3.3 * 30;",  
 //     "opponentsHit.add(currentTarget.getID());",
-//     "Double d_max = 3.3 * 5;",
+//     "Double d_max = 3.3 * 5;", 
 //     "currentTarget.getStatusList().inflictStatus(slowDownStatus, user);"
 // ]
 
