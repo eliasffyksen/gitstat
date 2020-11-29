@@ -4,7 +4,7 @@
 	import CodeViewer from "./code-viewer/CodeViewer.svelte";
 
 	let lines = [];
-	let scoreboard = {data: []};
+	let scoreboard = [];
 	let title = "";
 	let progress = 0;
 	let scroll;
@@ -26,15 +26,19 @@
 	}
 	
 	async function addPoint(name) {
-		for (let user of scoreboard.data) {
+		for (let user of scoreboard) {
 			if (user.name == name) {
 				user.points++;
-				scoreboard = {data: scoreboard.data};
+				scoreboard = scoreboard.sort((a, b) => {
+					return a.points < b.points;
+				});
 				return;
 			}
 		}
-		scoreboard.data.push({name, points: 1});
-		scoreboard = {data: scoreboard.data};
+		scoreboard.push({name, points: 1});
+		scoreboard = scoreboard.sort((a, b) => {
+			return a.points < b.points;
+		});
 	}
 
 	onMount(() => {
@@ -160,8 +164,9 @@
 	</div>
 	<div style="flex-basis: 30rem;flex-shrink: 0;">
 		<h1 class="text-xl mt-4">Scoreboard:</h1>
-		{#each scoreboard.data as user}
+		{#each scoreboard as user}
 			<div>{user.name}: {user.points}</div>
 		{/each}
 	</div>
 </main>
+
