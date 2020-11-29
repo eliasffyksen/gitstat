@@ -111,7 +111,7 @@ async function getFileDiff(patch) {
             const line = lines[i];
             const content = line.content().replace("\n", "");
             if (line.oldLineno() != -1 && line.newLineno() != -1) {
-                ret.push(content);
+                ret.push([content]);
                 continue;
             }
 
