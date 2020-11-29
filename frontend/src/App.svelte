@@ -103,7 +103,7 @@
 		running = false;
 		socket.emit("block");
 		socket.emit("clear");
-		socket.emit("watch_commit", selectRepo, null);
+		socket.emit("watch_commit", selectRepo, commit);
 		socket.emit("ready");
 	}
 </script>

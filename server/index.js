@@ -11,11 +11,36 @@ const repos = require('../backend/repos.json');
 let conn;
 const r = require('rethinkdb');
 const { watch } = require('fs');
+const users = [];
+
 r.connect({
     host: 'localhost',
     db: 'gitstat'
 }).then((newConn) => {
     conn = newConn;
+    r.table('commits').changes().run(conn)
+        .then(cursor => cursor.each((err, data) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            if (data.old_val == null) {
+                const doc = data.new_val;
+                for (let user of users) {
+                    for (let watch of user.watchList) {
+                        if (watch.repo != doc.repo) continue;
+                        if (doc.parents.length == 0 && watch.commit == null) {
+                            addToPendingCommits(user, doc.repo, doc.id);
+                            break;
+                        }
+                        if (doc.parents.includes(watch.commit)) {
+                            addToPendingCommits(user, doc.repo, doc.id);
+                            break;
+                        }
+                    }
+                }
+            }
+        }))
     console.log('connected to db');
 });
 
@@ -26,6 +51,7 @@ let nextId = 0;
 
 io.on('connection', (socket) => {
     const user = { id: nextId++, repo: null, socket };
+    users.push(user);
     console.log('user', user.id, 'connected');
     socket.emit('repos', repos.map(e => e.name));
     socket.on('block', _ => user.ready = false);
@@ -57,6 +83,12 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('user', user.id, 'disconnected');
+        for (let i = 0; i < users.length; i++) {
+            if (users[i].id == user.id) {
+                users.splice(i, 1);
+                break;
+            }
+        }
     });
 });
 
@@ -110,30 +142,24 @@ async function addToWatchList(user, repo, commit) {
     });
 
     if (commit == null) {
-        let doc = await r.table('commits')
+        let docs = await r.table('commits')
             .filter(r.row('repo').eq(repo))
             .filter(r.row('parents').count().eq(0))
             .pluck(['id'])
             .run(conn)
-            .then(cursor => cursor.each((err, doc) => {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                addToPendingCommits(user, repo, doc.id);
-            }));
+            .then(cursor => cursor.toArray());
+        for (let doc of docs) {
+            await addToPendingCommits(user, repo, doc.id);
+        }
         return;
     }
 
-    r.table('commits')
+    let docs = await r.table('commits')
         .filter(r.row('repo').eq(repo))
         .filter(r.row('parents').contains(commit))
         .run(conn)
-        .then(cursor => cursor.each((err, doc) => {
-            if (err) {
-                console.error(err);
-                return;
-            }
-            addToPendingCommits(user, repo, doc.id);
-        }));
+        .then(cursor => cursor.toArray());
+    for (let doc of docs) {
+        await addToPendingCommits(user, repo, doc.id);
+    }
 }
