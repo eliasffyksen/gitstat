@@ -6,6 +6,8 @@
 	let lines = [];
 	let scoreboard = [];
 	let commitMsgs = [];
+	let currentFile = 0;
+	let fileCount = 0;
 	let title = "";
 	let progress = 0;
 	let scroll;
@@ -59,8 +61,11 @@
 			running = true;
 
 			commitMsgs = [`${commit.message} - ${commit.author.name}`, ...commitMsgs];
+			currentFile = 0;
+			fileCount = commit.files.length;
 
 			for (let file of commit.files) {
+				currentFile++;
 
 				let skip = false;
 				for (let name of ['README', 'package-lock', 'dummydata']) {
@@ -166,6 +171,9 @@
 					From begining
 				</option>
 			</select>
+		</div>
+		<div>
+		<h1 class='text-center'>{currentFile}/{fileCount} files done for this commit</h1>
 		</div>
 		<div
 			class="flex m-1 bg-gray-700 rounded-lg overflow-hidden h-4"
